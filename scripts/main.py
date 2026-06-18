@@ -10,8 +10,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
-from anthropic import Anthropic
 from github import Github, GithubException
+from google import genai
 
 BANGKOK = timezone(timedelta(hours=7))
 ROOT = Path(__file__).resolve().parent.parent
@@ -20,7 +20,7 @@ REPORTS_DIR = ROOT / "reports"
 
 DAILY_TOKEN = os.environ.get("DAILY_TOKEN", "")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 REPO_FULL_NAME = os.environ.get("GITHUB_REPOSITORY", "")
 
 
@@ -42,7 +42,7 @@ def get_github_token() -> str:
     return token
 
 TRENDING_LIMIT = 10
-AI_MODEL = "claude-sonnet-4-20250514"
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
 
 
 def today_bangkok() -> datetime:
@@ -85,10 +85,10 @@ def repo_summary_block(repos: list[dict]) -> str:
 
 
 def generate_ai_digest(repos: list[dict]) -> str:
-    if not ANTHROPIC_API_KEY:
+    if not GEMINI_API_KEY:
         return (
-            "_AI digest unavailable — add `ANTHROPIC_API_KEY` to repository secrets "
-            "for Claude-powered analysis._"
+            "_AI digest unavailable — add `GEMINI_API_KEY` to repository secrets "
+            "for Gemini-powered analysis._"
         )
 
     repo_lines = "\n".join(
@@ -109,13 +109,12 @@ Write a concise Markdown section (in English) with:
 
 Keep it under 400 words. Use ### headings. No preamble."""
 
-    client = Anthropic(api_key=ANTHROPIC_API_KEY)
-    message = client.messages.create(
-        model=AI_MODEL,
-        max_tokens=1024,
-        messages=[{"role": "user", "content": prompt}],
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
     )
-    return message.content[0].text.strip()
+    return response.text.strip()
 
 
 def build_report(repos: list[dict], ai_digest: str) -> str:

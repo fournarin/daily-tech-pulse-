@@ -13,7 +13,7 @@ Every day at **8:00 AM Bangkok time**, this bot automatically:
 | Step | Action |
 |------|--------|
 | 1 | 📡 Fetches the hottest new GitHub repos (last 7 days by stars) |
-| 2 | 🧠 Analyzes them with **Claude AI** |
+| 2 | 🧠 Analyzes them with **Gemini AI** |
 | 3 | 📝 Writes a Markdown digest report |
 | 4 | 🌿 Creates a new branch `report/YYYY-MM-DD` |
 | 5 | 💾 Commits the report + updates this README |
@@ -27,7 +27,7 @@ Every day at **8:00 AM Bangkok time**, this bot automatically:
 | Tool | Purpose |
 |------|---------|
 | GitHub Actions | Automation & scheduling |
-| Claude API (claude-sonnet-4-6) | AI-powered analysis |
+| Gemini API (gemini-2.0-flash) | AI-powered analysis |
 | PyGithub | GitHub API client |
 | Python 3.11 | Core language |
 
@@ -55,4 +55,4 @@ See **[SETUP.md](SETUP.md)** for step-by-step instructions.
 
 ---
 
-*Built with ❤️ and 🤖 · Powered by [Claude AI](https://anthropic.com)*
+*Built with ❤️ and 🤖 · Powered by [Gemini](https://ai.google.dev)*
