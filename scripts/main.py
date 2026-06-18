@@ -18,26 +18,26 @@ ROOT = Path(__file__).resolve().parent.parent
 README_PATH = ROOT / "README.md"
 REPORTS_DIR = ROOT / "reports"
 
-PAT_TOKEN = os.environ.get("PAT_TOKEN", "")
+DAILY_TOKEN = os.environ.get("DAILY_TOKEN", "")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 REPO_FULL_NAME = os.environ.get("GITHUB_REPOSITORY", "")
 
 
 def get_github_token() -> str:
-    token = PAT_TOKEN or GITHUB_TOKEN
+    token = DAILY_TOKEN or GITHUB_TOKEN
     if not token:
         print(
             "ERROR: No GitHub token found.\n"
-            "Add repository secret PAT_TOKEN (scopes: repo, workflow) at:\n"
+            "Add repository secret DAILY_TOKEN (scopes: repo, workflow) at:\n"
             "  Settings → Secrets and variables → Actions → New repository secret",
             file=sys.stderr,
         )
         sys.exit(1)
-    if not PAT_TOKEN:
+    if not DAILY_TOKEN:
         print(
             "ℹ️  Using GITHUB_TOKEN — commits appear as github-actions[bot]. "
-            "Add PAT_TOKEN for contributions on your profile."
+            "Add DAILY_TOKEN for contributions on your profile."
         )
     return token
 
@@ -63,7 +63,7 @@ def fetch_trending_repos(limit: int = TRENDING_LIMIT) -> list[dict]:
         "per_page": limit,
     }
     headers = {"Accept": "application/vnd.github+json"}
-    token = PAT_TOKEN or GITHUB_TOKEN
+    token = DAILY_TOKEN or GITHUB_TOKEN
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
