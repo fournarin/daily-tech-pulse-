@@ -34,11 +34,11 @@ Every day at **8:00 AM Bangkok time**, this bot automatically:
 ---
 
 <!-- LATEST_REPORT_START -->
-## 📊 Latest Report: (not yet generated)
+## 📊 Latest Report: [2026-06-18](reports/2026-06-18.md)
 
-> 🚀 Run the workflow manually to generate the first report!
->
-> Go to **Actions → 🤖 Daily Tech Pulse → Run workflow**
+Top repo: **[DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)** (⭐ 33,277)
+
+[Read full report →](reports/2026-06-18.md)
 <!-- LATEST_REPORT_END -->
 
 ---
