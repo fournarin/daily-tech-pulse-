@@ -19,8 +19,27 @@ README_PATH = ROOT / "README.md"
 REPORTS_DIR = ROOT / "reports"
 
 PAT_TOKEN = os.environ.get("PAT_TOKEN", "")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 REPO_FULL_NAME = os.environ.get("GITHUB_REPOSITORY", "")
+
+
+def get_github_token() -> str:
+    token = PAT_TOKEN or GITHUB_TOKEN
+    if not token:
+        print(
+            "ERROR: No GitHub token found.\n"
+            "Add repository secret PAT_TOKEN (scopes: repo, workflow) at:\n"
+            "  Settings → Secrets and variables → Actions → New repository secret",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if not PAT_TOKEN:
+        print(
+            "ℹ️  Using GITHUB_TOKEN — commits appear as github-actions[bot]. "
+            "Add PAT_TOKEN for contributions on your profile."
+        )
+    return token
 
 TRENDING_LIMIT = 10
 AI_MODEL = "claude-sonnet-4-20250514"
@@ -44,8 +63,9 @@ def fetch_trending_repos(limit: int = TRENDING_LIMIT) -> list[dict]:
         "per_page": limit,
     }
     headers = {"Accept": "application/vnd.github+json"}
-    if PAT_TOKEN:
-        headers["Authorization"] = f"Bearer {PAT_TOKEN}"
+    token = PAT_TOKEN or GITHUB_TOKEN
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
 
     response = requests.get(url, params=params, headers=headers, timeout=30)
     response.raise_for_status()
@@ -175,9 +195,7 @@ def create_issue_body(repos: list[dict], ai_digest: str) -> str:
 
 
 def run() -> None:
-    if not PAT_TOKEN:
-        print("ERROR: PAT_TOKEN secret is required", file=sys.stderr)
-        sys.exit(1)
+    token = get_github_token()
     if not REPO_FULL_NAME:
         print("ERROR: GITHUB_REPOSITORY env var is required", file=sys.stderr)
         sys.exit(1)
@@ -197,7 +215,7 @@ def run() -> None:
     report_content = build_report(repos, ai_digest)
     readme_content = update_readme(build_readme_snippet(report_filename, repos))
 
-    gh = Github(PAT_TOKEN)
+    gh = Github(token)
     repo = gh.get_repo(REPO_FULL_NAME)
     main_branch = repo.get_branch(repo.default_branch)
     base_sha = main_branch.commit.sha
