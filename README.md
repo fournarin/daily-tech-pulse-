@@ -2,7 +2,7 @@
 
 > AI-powered daily digest of GitHub's hottest trending repositories — updated every morning automatically.
 
-[![Daily Tech Digest](https://github.com/YOUR_USERNAME/daily-tech-pulse/actions/workflows/daily_digest.yml/badge.svg)](https://github.com/YOUR_USERNAME/daily-tech-pulse/actions/workflows/daily_digest.yml)
+[![Daily Tech Digest](https://github.com/fournarin/daily-tech-pulse-/actions/workflows/daily_digest.yml/badge.svg)](https://github.com/fournarin/daily-tech-pulse-/actions/workflows/daily_digest.yml)
 
 ---
 
