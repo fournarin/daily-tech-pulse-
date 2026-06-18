@@ -194,6 +194,58 @@ def create_issue_body(repos: list[dict], ai_digest: str) -> str:
 """
 
 
+def report_on_main(repo, report_rel: str) -> bool:
+    try:
+        repo.get_contents(report_rel, ref=repo.default_branch)
+        return True
+    except GithubException as exc:
+        if exc.status == 404:
+            return False
+        raise
+
+
+def find_open_pr(repo, branch_name: str):
+    pulls = repo.get_pulls(state="open", head=f"{repo.owner.login}:{branch_name}")
+    return next(iter(pulls), None)
+
+
+def finish_report(repo, branch_name: str, date: str, report_filename: str, repos: list, ai_digest: str) -> None:
+    pr = find_open_pr(repo, branch_name)
+    if pr is None:
+        print("🔀 Opening pull request...")
+        pr = repo.create_pull(
+            title=f"📊 Daily Report: {date}",
+            body=f"Automated daily tech digest for **{date}**.\n\n"
+            f"- Report: `reports/{report_filename}`\n"
+            f"- Trending repos analyzed: {len(repos)}",
+            head=branch_name,
+            base=repo.default_branch,
+        )
+    else:
+        print(f"🔀 Found existing PR #{pr.number}")
+
+    if pr.is_merged():
+        print(f"✅ PR #{pr.number} already merged")
+    else:
+        print("✅ Merging pull request...")
+        pr.merge(merge_method="squash", commit_title=f"📊 Daily report {date} (#{pr.number})")
+
+    issue_title = f"📋 Daily Highlights: {date}"
+    existing = list(repo.get_issues(state="open", creator=repo.owner.login))
+    if any(i.title == issue_title for i in existing):
+        print("📋 Daily issue already exists — skipping")
+    else:
+        print("📋 Creating daily issue...")
+        try:
+            repo.create_issue(
+                title=issue_title,
+                body=create_issue_body(repos, ai_digest),
+                labels=["daily-digest", "automated"],
+            )
+        except GithubException:
+            repo.create_issue(title=issue_title, body=create_issue_body(repos, ai_digest))
+
+
 def run() -> None:
     token = get_github_token()
     if not REPO_FULL_NAME:
@@ -204,6 +256,14 @@ def run() -> None:
     branch_name = f"report/{date}"
     report_filename = f"{date}.md"
     report_path = REPORTS_DIR / report_filename
+    report_rel = report_path.relative_to(ROOT).as_posix()
+
+    gh = Github(token)
+    repo = gh.get_repo(REPO_FULL_NAME)
+
+    if report_on_main(repo, report_rel):
+        print(f"✅ Report for {date} already on {repo.default_branch} — nothing to do")
+        return
 
     print(f"📡 Fetching trending repos for {date}...")
     repos = fetch_trending_repos()
@@ -212,29 +272,29 @@ def run() -> None:
     print("🧠 Generating AI digest...")
     ai_digest = generate_ai_digest(repos)
 
-    report_content = build_report(repos, ai_digest)
-    readme_content = update_readme(build_readme_snippet(report_filename, repos))
-
-    gh = Github(token)
-    repo = gh.get_repo(REPO_FULL_NAME)
-    main_branch = repo.get_branch(repo.default_branch)
-    base_sha = main_branch.commit.sha
-
-    # Skip if today's report branch already exists
+    branch_exists = False
     try:
         repo.get_branch(branch_name)
-        print(f"⚠️  Branch {branch_name} already exists — skipping")
-        sys.exit(0)
+        branch_exists = True
     except GithubException as exc:
         if exc.status != 404:
             raise
 
+    if branch_exists:
+        print(f"🌿 Resuming incomplete report on {branch_name}...")
+        finish_report(repo, branch_name, date, report_filename, repos, ai_digest)
+        print(f"🎉 Done! Report published for {date}")
+        return
+
+    report_content = build_report(repos, ai_digest)
+    readme_content = update_readme(build_readme_snippet(report_filename, repos))
+    main_branch = repo.get_branch(repo.default_branch)
+    base_sha = main_branch.commit.sha
+
     print(f"🌿 Creating branch {branch_name}...")
     repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=base_sha)
 
-    report_rel = report_path.relative_to(ROOT).as_posix()
     commit_msg = f"📊 Daily report {date}"
-
     print("💾 Committing report and README...")
     repo.create_file(
         path=report_rel,
@@ -252,32 +312,7 @@ def run() -> None:
         branch=branch_name,
     )
 
-    print("🔀 Opening pull request...")
-    pr = repo.create_pull(
-        title=f"📊 Daily Report: {date}",
-        body=f"Automated daily tech digest for **{date}**.\n\n"
-        f"- Report: `reports/{report_filename}`\n"
-        f"- Trending repos analyzed: {len(repos)}",
-        head=branch_name,
-        base=repo.default_branch,
-    )
-
-    print("✅ Merging pull request...")
-    pr.merge(merge_method="squash", commit_title=f"📊 Daily report {date} (#{pr.number})")
-
-    print("📋 Creating daily issue...")
-    try:
-        repo.create_issue(
-            title=f"📋 Daily Highlights: {date}",
-            body=create_issue_body(repos, ai_digest),
-            labels=["daily-digest", "automated"],
-        )
-    except GithubException:
-        repo.create_issue(
-            title=f"📋 Daily Highlights: {date}",
-            body=create_issue_body(repos, ai_digest),
-        )
-
+    finish_report(repo, branch_name, date, report_filename, repos, ai_digest)
     print(f"🎉 Done! Report published for {date}")
 
 
