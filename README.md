@@ -8,7 +8,7 @@
 
 ## 🤖 What This Does
 
-Every day at **8:00 AM Bangkok time**, this bot automatically:
+Every day at **~8:17 AM Bangkok time** (with automatic fallbacks at 9:17 and 10:17), this bot automatically:
 
 | Step | Action |
 |------|--------|

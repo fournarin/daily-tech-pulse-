@@ -2,9 +2,17 @@ name: 🤖 Daily Tech Pulse
 
 on:
   schedule:
-    # 01:00 UTC = 08:00 Bangkok (ICT)
-    - cron: "0 1 * * *"
+    # GitHub cron is UTC-only. Avoid minute 0 — runs are often delayed/dropped at the top of the hour.
+    # Primary + fallbacks (Bangkok ICT = UTC+7). main.py skips if today's report is already on main.
+    - cron: "17 1 * * *"   # 08:17 Bangkok
+    - cron: "17 2 * * *"   # 09:17 Bangkok (fallback)
+    - cron: "17 3 * * *"   # 10:17 Bangkok (fallback)
   workflow_dispatch:
+
+# Queue overlapping schedule triggers; main.py is idempotent but this avoids wasted runs.
+concurrency:
+  group: daily-tech-pulse-digest
+  cancel-in-progress: false
 
 permissions:
   contents: write
